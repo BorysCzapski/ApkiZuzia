@@ -2,82 +2,514 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Angielski - Gry Edukacyjne</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0fdf4;
-            color: #1f2937;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+        :root {
+            --bg-color: #f0fdf4;
+            --text-main: #1f2937;
+            --primary: #22c55e;
+            --primary-hover: #16a34a;
+            --secondary: #3b82f6;
+            --secondary-hover: #2563eb;
+        }
+
+        body, html {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            width: 100%;
+            height: 100dvh; /* Używamy dvh, aby uniknąć problemów z paskiem adresu na iOS/Android */
+            overflow: hidden; /* BLOKADA SCROLLOWANIA NA CAŁEJ STRONIE */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             box-sizing: border-box;
         }
-        .container {
+
+        *, *::before, *::after {
+            box-sizing: inherit;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            max-width: 600px;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        .menu-container {
             background: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             text-align: center;
-            max-width: 500px;
             width: 100%;
         }
-        h1 {
-            color: #166534;
-            margin-bottom: 10px;
-        }
-        p {
-            color: #6b7280;
-            margin-bottom: 30px;
-        }
-        .menu-btn {
+
+        .menu-container h1 { color: #166534; margin-top: 0; }
+        .menu-container p { color: #6b7280; margin-bottom: 25px; }
+        
+        .btn-main {
             display: block;
             width: 100%;
             padding: 16px;
             margin: 15px 0;
-            background-color: #22c55e;
             color: white;
-            text-decoration: none;
+            border: none;
             font-size: 18px;
             font-weight: bold;
             border-radius: 12px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .menu-btn:hover {
-            background-color: #16a34a;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(34, 197, 94, 0.3);
+        .btn-memory { background-color: var(--primary); box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2); }
+        .btn-memory:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+        .btn-quiz { background-color: var(--secondary); box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2); }
+        .btn-quiz:hover { background-color: var(--secondary-hover); transform: translateY(-2px); }
+
+        .game-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-shrink: 0;
         }
-        .menu-btn.business {
-            background-color: #3b82f6;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        
+        .back-btn {
+            background: #e5e7eb;
+            color: #4b5563;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
         }
-        .menu-btn.business:hover {
-            background-color: #2563eb;
-            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+        .back-btn:hover { background: #d1d5db; }
+        
+        .game-title { font-size: 20px; font-weight: bold; margin: 0; color: #1e3a8a; }
+
+        #memory-wrapper {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 0; /* Ważne dla zagnieżdżonego flexboxa */
         }
+
+        #memory-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 450px; /* Sztywna wysokość, by uniknąć rozciągania */
+        }
+
+        .mem-card {
+            background: white;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4px;
+            cursor: pointer;
+            font-size: clamp(10px, 3.5vw, 14px); /* Płynne skalowanie czcionki */
+            font-weight: 600;
+            transition: all 0.2s;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            word-break: break-word;
+        }
+
+        .mem-card:active { transform: scale(0.95); }
+        .mem-card.selected { background: #e0f2fe; border-color: #38bdf8; color: #0369a1; }
+        .mem-card.matched { background: #bbf7d0; border-color: #22c55e; color: #14532d; cursor: default; }
+        .mem-card.wrong { background: #fecaca; border-color: #ef4444; color: #7f1d1d; }
+
+        .memory-controls {
+            margin-top: 15px;
+            flex-shrink: 0;
+        }
+
+        #quiz-wrapper {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            flex-shrink: 0;
+        }
+
+        .quiz-progress { font-size: 14px; color: #6b7280; margin-bottom: 10px; font-weight: bold; text-align: center;}
+        #quiz-question { font-size: 22px; color: #1e3a8a; margin: 0 0 20px 0; text-align: center; }
+        
+        .quiz-btn {
+            padding: 14px;
+            margin: 8px 0;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            background: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+            color: #374151;
+            width: 100%;
+        }
+        
+        .quiz-btn:hover:not(:disabled) { background: #f3f4f6; border-color: #d1d5db; }
+        .quiz-btn.correct { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; }
+        .quiz-btn.wrong { background: #ef4444 !important; color: white !important; border-color: #ef4444 !important; }
+        .quiz-btn:disabled { cursor: default; opacity: 0.9; }
+
+        .action-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .action-btn:hover { background: var(--secondary-hover); }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Wybierz grę! 🎮</h1>
-        <p>Wybierz zestaw słówek, który chcesz dzisiaj poćwiczyć.</p>
-        
-        <a href="memory.html" class="menu-btn">
-            🧠 Memory: Człowiek i Emocje
-        </a>
-        
-        <a href="quiz.html" class="menu-btn business">
-            💼 Quiz: Business English
-        </a>
+<div id="app">
+    
+    <!-- WIDOK: MENU -->
+    <div id="view-menu" class="view active">
+        <div class="menu-container">
+            <h1>Zagraj i ucz się! 🎮</h1>
+            <p>Wybierz tryb gry i trenuj słownictwo.</p>
+            <button class="btn-main btn-memory" onclick="switchView('view-memory'); initMemory();">🧠 Memory: Cechy i Emocje</button>
+            <button class="btn-main btn-quiz" onclick="switchView('view-quiz'); startQuiz();">💼 Quiz: Business English</button>
+        </div>
     </div>
 
+    <!-- WIDOK: MEMORY -->
+    <div id="view-memory" class="view">
+        <div class="game-header">
+            <button class="back-btn" onclick="switchView('view-menu')">← Menu</button>
+            <h2 class="game-title">Memory</h2>
+            <div style="width: 70px;"></div> <!-- Spacer -->
+        </div>
+        
+        <div id="memory-wrapper">
+            <div id="memory-board"></div>
+        </div>
+        
+        <div class="memory-controls">
+            <button class="action-btn" onclick="initMemory()">Losuj nowe karty</button>
+        </div>
+    </div>
+
+    <!-- WIDOK: QUIZ -->
+    <div id="view-quiz" class="view">
+        <div class="game-header">
+            <button class="back-btn" onclick="switchView('view-menu')">← Menu</button>
+            <h2 class="game-title">Quiz</h2>
+            <div style="width: 70px;"></div>
+        </div>
+
+        <div id="quiz-wrapper">
+            <div class="quiz-progress" id="quiz-progress">Pytanie 1 / 10</div>
+            <h2 id="quiz-question">Ładowanie...</h2>
+            <div id="quiz-options"></div>
+            
+            <button id="quiz-next-btn" class="action-btn hidden" onclick="nextQuestion()">Następne pytanie</button>
+            
+            <div id="quiz-result" class="hidden" style="text-align: center;">
+                <h3 style="font-size: 24px; color: #1e3a8a; margin: 10px 0;" id="quiz-score-text"></h3>
+                <button class="action-btn" onclick="startQuiz()">Zagraj jeszcze raz</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+    }
+
+    const businessVocab = [
+        {pl: "forma prawna", en: "legal structure"}, {pl: "spółka z o.o.", en: "LLC"},
+        {pl: "korporacja", en: "corporation"}, {pl: "spółka osobowa", en: "partnership"},
+        {pl: "wychodzący na zero", en: "break-even"}, {pl: "lokalizacja", en: "location"},
+        {pl: "licencja", en: "license"}, {pl: "pozwolenie", en: "permit"},
+        {pl: "biznesplan", en: "business plan"}, {pl: "początkowy okres", en: "initial period"},
+        {pl: "wkłady własne", en: "personal contributions"}, {pl: "jednoosobowa działalność", en: "sole proprietor"},
+        {pl: "nowa firma / startup", en: "startup"}, {pl: "zyski", en: "profits"},
+        {pl: "przychody ze sprzedaży", en: "sales revenue"}, {pl: "marża", en: "margin"},
+        {pl: "koszty", en: "costs"}, {pl: "zarobki brutto", en: "gross earnings"},
+        {pl: "odpowiedni", en: "appropriate"}, {pl: "szczegółowy", en: "detailed"},
+        {pl: "prognozy", en: "projections"}, {pl: "odpowiedni, nadający się", en: "suitable"},
+        {pl: "uzyskać, nabyć", en: "acquire"}, {pl: "niezbędny", en: "necessary"},
+        {pl: "realistyczny", en: "realistic"}, {pl: "wystarczający", en: "adequate"},
+        {pl: "brutto (zarobki)", en: "gross"}, {pl: "spadek koniunktury", en: "downturn"},
+        {pl: "podaż", en: "supply"}, {pl: "popyt", en: "demand"},
+        {pl: "wydatki publiczne", en: "public spending"}, {pl: "statystyki", en: "statistics"},
+        {pl: "konsumenci", en: "consumers"}, {pl: "cena", en: "price"},
+        {pl: "ilość", en: "quantity"}, {pl: "wyprodukowane", en: "manufactured"},
+        {pl: "nadprodukcja", en: "overproduction"}, {pl: "przewidywać", en: "anticipate"},
+        {pl: "towary", en: "goods"}, {pl: "obliczenia", en: "calculations"},
+        {pl: "elastyczność", en: "elasticity"}, {pl: "sprzedaż (ogółem)", en: "sales"},
+        {pl: "obniżki cen", en: "price cuts"}, {pl: "nadwyżka", en: "surplus"},
+        {pl: "straty", en: "losses"}, {pl: "sprzedaż (transakcja)", en: "sale"},
+        {pl: "wydatki", en: "spending"}, {pl: "trend, tendencja", en: "trend"},
+        {pl: "określać", en: "determine"}
+    ];
+
+    const humanVocab = [
+        {en: "aggressive", pl: "agresywny"}, {en: "ambitious", pl: "ambitny"}, {en: "arrogant", pl: "arogancki"},
+        {en: "bossy", pl: "apodyktyczny"}, {en: "brave", pl: "odważny"}, {en: "bright", pl: "bystry"},
+        {en: "calm", pl: "opanowany"}, {en: "careful", pl: "ostrożny"}, {en: "caring", pl: "troskliwy"},
+        {en: "cheerful", pl: "radosny"}, {en: "clever", pl: "inteligentny"}, {en: "confident", pl: "pewny siebie"},
+        {en: "cruel", pl: "okrutny"}, {en: "easy-going", pl: "wyluzowany"}, {en: "friendly", pl: "przyjazny"},
+        {en: "funny", pl: "zabawny"}, {en: "generous", pl: "szczodry"}, {en: "gentle", pl: "łagodny"},
+        {en: "hard-working", pl: "pracowity"}, {en: "honest", pl: "uczciwy"}, {en: "impatient", pl: "niecierpliwy"},
+        {en: "insecure", pl: "niepewny"}, {en: "kind-hearted", pl: "dobrotliwy"}, {en: "lazy", pl: "leniwy"},
+        {en: "mean", pl: "skąpy, podły"}, {en: "messy", pl: "nieporządny"}, {en: "modest", pl: "skromny"},
+        {en: "outgoing", pl: "towarzyski"}, {en: "polite", pl: "uprzejmy"}, {en: "reliable", pl: "godny zaufania"},
+        {en: "selfish", pl: "samolubny"}, {en: "sensible", pl: "rozsądny"}, {en: "sensitive", pl: "wrażliwy"},
+        {en: "stubborn", pl: "uparty"}, {en: "talkative", pl: "gadatliwy"}, {en: "annoyed", pl: "zirytowany"},
+        {en: "depressed", pl: "załamany"}, {en: "disappointed", pl: "rozczarowany"}, {en: "embarrassed", pl: "zawstydzony"},
+        {en: "excited", pl: "podekscytowany"}, {en: "frightened", pl: "przerażony"}, {en: "frustrated", pl: "sfrustrowany"},
+        {en: "moved", pl: "wzruszony"}, {en: "puzzled", pl: "zaskoczony"}, {en: "stressed out", pl: "zestresowany"},
+        {en: "bang your fist", pl: "uderzyć pięścią"}, {en: "cross your legs", pl: "skrzyżować nogi"},
+        {en: "frown", pl: "zmarszczyć brwi"}, {en: "grind your teeth", pl: "zgrzytać zębami"}, 
+        {en: "shrug your shoulders", pl: "wzruszyć ramionami"}, {en: "wink at sb", pl: "mrugnąć do kogoś"},
+        {en: "be in a bad mood", pl: "być w złym nastroju"}, {en: "cheer up", pl: "rozweselić się"}, 
+        {en: "lose your temper", pl: "stracić panowanie"}, {en: "be down in the dumps", pl: "mieć chandrę"},
+        {en: "get butterflies", pl: "mieć tremę"}, {en: "adore", pl: "uwielbiać"}, 
+        {en: "be fond of sb", pl: "lubić kogoś"}, {en: "betray", pl: "zdradzić"}, {en: "courage", pl: "odwaga"},
+        {en: "honesty", pl: "uczciwość"}, {en: "loyalty", pl: "lojalność"}, {en: "rebel against sth", pl: "buntować się"}
+    ];
+
+    let quizQuestions = [];
+    let currentQ = 0;
+    let quizScore = 0;
+
+    function getQuizOptions(correctAnswer) {
+        let options = [correctAnswer];
+        let pool = businessVocab.filter(item => item.en !== correctAnswer);
+        pool.sort(() => 0.5 - Math.random());
+        options.push(pool[0].en, pool[1].en, pool[2].en);
+        return options.sort(() => 0.5 - Math.random());
+    }
+
+    function startQuiz() {
+        // Resetujemy UI
+        document.getElementById("quiz-result").classList.add("hidden");
+        document.getElementById("quiz-options").classList.remove("hidden");
+        document.getElementById("quiz-question").classList.remove("hidden");
+        document.getElementById("quiz-progress").classList.remove("hidden");
+        
+        // NAPRAWA BŁĘDU: Upewniamy się, że przycisk ma odpowiednią funkcję po restarcie
+        let nextBtn = document.getElementById("quiz-next-btn");
+        nextBtn.onclick = nextQuestion; 
+        nextBtn.innerText = "Następne pytanie";
+        nextBtn.classList.add("hidden");
+
+        // Losujemy 15 pytań
+        quizQuestions = [...businessVocab].sort(() => 0.5 - Math.random()).slice(0, 15);
+        currentQ = 0;
+        quizScore = 0;
+        
+        loadQuizQuestion();
+    }
+
+    function loadQuizQuestion() {
+        const q = quizQuestions[currentQ];
+        document.getElementById("quiz-progress").innerText = `Pytanie ${currentQ + 1} z ${quizQuestions.length}`;
+        document.getElementById("quiz-question").innerText = q.pl;
+        
+        const optsDiv = document.getElementById("quiz-options");
+        optsDiv.innerHTML = "";
+        document.getElementById("quiz-next-btn").classList.add("hidden");
+        
+        const options = getQuizOptions(q.en);
+        
+        options.forEach(opt => {
+            const btn = document.createElement("button");
+            btn.className = "quiz-btn";
+            btn.innerText = opt;
+            btn.onclick = () => checkQuizAnswer(btn, opt, q.en);
+            optsDiv.appendChild(btn);
+        });
+    }
+
+    function checkQuizAnswer(btn, selected, correct) {
+        const buttons = document.querySelectorAll("#quiz-options .quiz-btn");
+        buttons.forEach(b => {
+            b.disabled = true;
+            if (b.innerText === correct) b.classList.add("correct");
+        });
+        
+        if (selected === correct) {
+            quizScore++;
+        } else {
+            btn.classList.add("wrong");
+        }
+        
+        let nextBtn = document.getElementById("quiz-next-btn");
+        nextBtn.classList.remove("hidden");
+        if (currentQ === quizQuestions.length - 1) {
+            nextBtn.innerText = "Zakończ i pokaż wynik";
+        }
+    }
+
+    function nextQuestion() {
+        currentQ++;
+        if (currentQ < quizQuestions.length) {
+            loadQuizQuestion();
+        } else {
+            // Koniec gry
+            document.getElementById("quiz-options").classList.add("hidden");
+            document.getElementById("quiz-question").classList.add("hidden");
+            document.getElementById("quiz-progress").classList.add("hidden");
+            document.getElementById("quiz-next-btn").classList.add("hidden");
+            
+            document.getElementById("quiz-result").classList.remove("hidden");
+            document.getElementById("quiz-score-text").innerText = `Twój wynik: ${quizScore} / ${quizQuestions.length} 🔥`;
+        }
+    }
+
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let memMatches = 0;
+    const TOTAL_PAIRS = 8; // 8 par = 16 kafelków na siatce 4x4
+
+    function initMemory() {
+        const board = document.getElementById("memory-board");
+        board.innerHTML = "";
+        firstCard = null;
+        secondCard = null;
+        lockBoard = false;
+        memMatches = 0;
+
+        // Losowanie 8 unikalnych par
+        const selectedPairs = [...humanVocab].sort(() => 0.5 - Math.random()).slice(0, TOTAL_PAIRS);
+        
+        let cardsArray = [];
+        selectedPairs.forEach((pair, index) => {
+            // Dodajemy unikalny uniqueId dla każdej pary, by wykluczyć błędy w porównaniach
+            cardsArray.push({ text: pair.en, pairId: index, type: 'en' });
+            cardsArray.push({ text: pair.pl, pairId: index, type: 'pl' });
+        });
+
+        // Tasowanie
+        cardsArray.sort(() => 0.5 - Math.random());
+
+        // Renderowanie
+        cardsArray.forEach(card => {
+            const div = document.createElement("div");
+            div.classList.add("mem-card");
+            div.innerText = card.text;
+            div.dataset.pairId = card.pairId;
+            div.dataset.type = card.type;
+            
+            div.addEventListener("click", () => flipCard(div));
+            board.appendChild(div);
+        });
+    }
+
+    function flipCard(card) {
+        // ZABEZPIECZENIA: zablokowana plansza, ta sama karta, lub dopasowana karta
+        if (lockBoard) return;
+        if (card === firstCard) return; 
+        if (card.classList.contains("matched")) return;
+
+        card.classList.add("selected");
+
+        if (!firstCard) {
+            firstCard = card;
+            return;
+        }
+
+        secondCard = card;
+        checkMemoryMatch();
+    }
+
+    function checkMemoryMatch() {
+        // Sprawdzamy, czy karty należą do tej samej pary (pairId) 
+        // i czy jedna jest angielska a druga polska (by nie kliknąć np. 2 razy pl jeśli byłby błąd w danych)
+        let isMatch = (firstCard.dataset.pairId === secondCard.dataset.pairId) && 
+                      (firstCard.dataset.type !== secondCard.dataset.type);
+
+        if (isMatch) {
+            lockBoard = true;
+            setTimeout(() => {
+                firstCard.classList.remove("selected");
+                secondCard.classList.remove("selected");
+                firstCard.classList.add("matched");
+                secondCard.classList.add("matched");
+                memMatches++;
+                
+                if (memMatches === TOTAL_PAIRS) {
+                    setTimeout(() => {
+                        initMemory(); // Automatyczny reset lub alert
+                    }, 1000);
+                }
+                resetMemoryBoard();
+            }, 300);
+        } else {
+            lockBoard = true;
+            firstCard.classList.add("wrong");
+            secondCard.classList.add("wrong");
+            
+            setTimeout(() => {
+                firstCard.classList.remove("selected", "wrong");
+                secondCard.classList.remove("selected", "wrong");
+                resetMemoryBoard();
+            }, 800);
+        }
+    }
+
+    function resetMemoryBoard() {
+        firstCard = null;
+        secondCard = null;
+        lockBoard = false;
+    }
+
+    // Inicjalizacja pustego memory w tle, by było gotowe po wejściu
+    initMemory();
+
+</script>
 </body>
 </html>
