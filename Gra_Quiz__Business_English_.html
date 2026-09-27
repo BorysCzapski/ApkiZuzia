@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - Business English</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            background: #eff6ff; 
+            margin: 0;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .nav-link {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .nav-link:hover { text-decoration: underline; }
+        .card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            width: 100%; 
+            max-width: 400px; 
+            text-align: center; 
+            box-sizing: border-box;
+        }
+        h2 { margin-top: 0; color: #1e3a8a; font-size: 24px; }
+        .progress { color: #6b7280; font-size: 14px; margin-bottom: 20px; font-weight: bold;}
+        .btn { 
+            display: block; 
+            width: 100%; 
+            padding: 14px; 
+            margin: 10px 0; 
+            border: 2px solid #e5e7eb; 
+            border-radius: 10px; 
+            background: white; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            font-weight: 500;
+            color: #374151;
+        }
+        .btn:hover:not(:disabled) { 
+            background: #f3f4f6; 
+            border-color: #d1d5db;
+        }
+        .btn:disabled { cursor: default; }
+        .correct { background: #22c55e !important; color: white !important; border-color: #22c55e !important; }
+        .wrong { background: #ef4444 !important; color: white !important; border-color: #ef4444 !important; }
+        
+        .action-btn { 
+            background: #3b82f6; 
+            color: white; 
+            border: none;
+            margin-top: 25px; 
+            display: none; 
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+        }
+        .action-btn:hover { background: #2563eb; }
+        
+        #result-screen { display: none; }
+        .score-huge { font-size: 48px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="index.html" class="nav-link">← Wróć do menu</a>
+    </div>
+
+    <div class="card" id="quiz-container">
+        <div class="progress" id="progress">Pytanie 1 / 10</div>
+        <h2 id="question">Ładowanie...</h2>
+        <div id="options"></div>
+        <button id="next-btn" class="action-btn" onclick="nextQuestion()">Następne pytanie</button>
+    </div>
+
+    <div class="card" id="result-screen">
+        <h2>Koniec Quizu!</h2>
+        <div class="score-huge">🏆</div>
+        <p style="font-size: 18px; color: #374151;">Twój wynik:</p>
+        <h3 id="score-text" style="font-size: 28px; color: #1e3a8a; margin: 10px 0;"></h3>
+        <button class="action-btn" style="display: block; margin-top: 20px;" onclick="location.reload()">Zagraj jeszcze raz</button>
+    </div>
+
+    <script>
+        const questions = [
+            { prompt: "podaż", options: ["supply", "demand", "spending", "elasticity"], answer: "supply" },
+            { prompt: "spadek koniunktury", options: ["upturn", "downturn", "margin", "permit"], answer: "downturn" },
+            { prompt: "wychodzący na zero", options: ["gross", "break-even", "net", "profit"], answer: "break-even" },
+            { prompt: "nadprodukcja", options: ["overproduction", "spending", "supply", "downturn"], answer: "overproduction" },
+            { prompt: "marża", options: ["permit", "location", "margin", "license"], answer: "margin" },
+            { prompt: "pozwolenie", options: ["permit", "business plan", "contribution", "legal structure"], answer: "permit" },
+            { prompt: "elastyczność", options: ["elasticity", "gross", "spending", "sale"], answer: "elasticity" },
+            { prompt: "popyt", options: ["supply", "demand", "consumer", "price"], answer: "demand" },
+            { prompt: "wydatki", options: ["contributions", "spending", "profits", "costs"], answer: "spending" },
+            { prompt: "brutto", options: ["gross", "break-even", "margin", "net"], answer: "gross" }
+        ];
+        
+        let current = 0;
+        let score = 0;
+
+        // Pomieszanie pytań przed startem
+        questions.sort(() => Math.random() - 0.5);
+
+        function loadQuestion() {
+            const q = questions[current];
+            document.getElementById("progress").innerText = `Pytanie ${current + 1} / ${questions.length}`;
+            document.getElementById("question").innerText = q.prompt;
+            const optsDiv = document.getElementById("options");
+            optsDiv.innerHTML = "";
+            document.getElementById("next-btn").style.display = "none";
+            
+            const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+            
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "btn";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(btn, opt, q.answer);
+                optsDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(btn, selected, correct) {
+            const buttons = document.querySelectorAll("#options .btn");
+            buttons.forEach(b => {
+                b.disabled = true;
+                if (b.innerText === correct) b.classList.add("correct");
+            });
+            
+            if (selected === correct) {
+                score++;
+            } else {
+                btn.classList.add("wrong");
+            }
+            
+            document.getElementById("next-btn").style.display = "block";
+            if (current === questions.length - 1) {
+                document.getElementById("next-btn").innerText = "Pokaż wynik";
+            }
+        }
+
+        function nextQuestion() {
+            current++;
+            if (current < questions.length) {
+                loadQuestion();
+            } else {
+                document.getElementById("quiz-container").style.display = "none";
+                document.getElementById("result-screen").style.display = "block";
+                document.getElementById("score-text").innerText = `${score} / ${questions.length}`;
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
