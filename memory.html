@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory - Człowiek</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0fdf4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            color: #1f2937;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 { margin: 0 0 10px 0; color: #166534; }
+        .nav-link {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .nav-link:hover { text-decoration: underline; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            max-width: 800px;
+            width: 100%;
+        }
+        @media (min-width: 600px) {
+            .grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        
+        .card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            user-select: none;
+        }
+        .card:hover {
+            border-color: #22c55e;
+            transform: translateY(-2px);
+        }
+        .card.selected {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e3a8a;
+        }
+        .card.matched {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            color: #14532d;
+            cursor: default;
+            transform: none;
+        }
+        .card.wrong {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #7f1d1d;
+            animation: shake 0.4s;
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        #win-screen {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background-color: #22c55e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .btn:hover { background-color: #16a34a; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="index.html" class="nav-link">← Wróć do menu</a>
+        <h1>Dopasuj pary 🧠</h1>
+        <p>Połącz angielskie słówko z polskim tłumaczeniem.</p>
+    </div>
+
+    <div class="grid" id="game-board"></div>
+
+    <div id="win-screen">
+        <h2>Gratulacje! 🎉</h2>
+        <p>Wszystkie pary zostały odnalezione.</p>
+        <button class="btn" onclick="initGame()">Zagraj jeszcze raz</button>
+    </div>
+
+    <script>
+        const pairs = [
+            { id: 1, en: "bossy", pl: "apodyktyczny" },
+            { id: 2, en: "easy-going", pl: "wyluzowany" },
+            { id: 3, en: "sensible", pl: "rozsądny" },
+            { id: 4, en: "stubborn", pl: "uparty" },
+            { id: 5, en: "shrug your shoulders", pl: "wzruszyć ramionami" },
+            { id: 6, en: "wink at sb", pl: "mrugnąć do kogoś" },
+            { id: 7, en: "be down in the dumps", pl: "mieć chandrę" },
+            { id: 8, en: "have a chip on your shoulder", pl: "być przewrażliwionym" },
+            { id: 9, en: "lose your temper", pl: "stracić panowanie" },
+            { id: 10, en: "rebel against sth", pl: "buntować się" }
+        ];
+
+        let cards = [];
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+        let matchedCount = 0;
+
+        function initGame() {
+            const board = document.getElementById('game-board');
+            const winScreen = document.getElementById('win-screen');
+            board.innerHTML = '';
+            winScreen.style.display = 'none';
+            matchedCount = 0;
+            cards = [];
+
+            // Tworzenie pojedynczych kart
+            pairs.forEach(pair => {
+                cards.push({ text: pair.en, id: pair.id, lang: 'en' });
+                cards.push({ text: pair.pl, id: pair.id, lang: 'pl' });
+            });
+
+            // Tasowanie
+            cards.sort(() => Math.random() - 0.5);
+
+            // Renderowanie
+            cards.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.classList.add('card');
+                cardEl.innerText = card.text;
+                cardEl.dataset.id = card.id;
+                cardEl.dataset.index = index;
+                cardEl.addEventListener('click', () => handleCardClick(cardEl));
+                board.appendChild(cardEl);
+            });
+        }
+
+        function handleCardClick(cardEl) {
+            if (lockBoard) return;
+            if (cardEl === firstCard) return;
+            if (cardEl.classList.contains('matched')) return;
+
+            cardEl.classList.add('selected');
+
+            if (!firstCard) {
+                firstCard = cardEl;
+                return;
+            }
+
+            secondCard = cardEl;
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.id === secondCard.dataset.id;
+            
+            if (isMatch) {
+                disableCards();
+            } else {
+                unflipCards();
+            }
+        }
+
+        function disableCards() {
+            firstCard.classList.remove('selected');
+            secondCard.classList.remove('selected');
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+            matchedCount += 2;
+            resetBoard();
+
+            if (matchedCount === cards.length) {
+                setTimeout(() => {
+                    document.getElementById('win-screen').style.display = 'block';
+                }, 500);
+            }
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+            firstCard.classList.remove('selected');
+            secondCard.classList.remove('selected');
+            firstCard.classList.add('wrong');
+            secondCard.classList.add('wrong');
+
+            setTimeout(() => {
+                firstCard.classList.remove('wrong');
+                secondCard.classList.remove('wrong');
+                resetBoard();
+            }, 800);
+        }
+
+        function resetBoard() {
+            [firstCard, secondCard, lockBoard] = [null, null, false];
+        }
+
+        // Start gry przy załadowaniu
+        initGame();
+    </script>
+</body>
+</html>
